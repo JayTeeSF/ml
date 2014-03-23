@@ -1,0 +1,14 @@
+#!/usr/bin/env ruby
+
+require 'zlib'
+require_relative "../lib/ml"
+
+Ml::Util.load_gem 'awesome_print', 'ap'
+
+pattern = "#{File.dirname(__FILE__)}/../fixtures/*"
+files = Dir[pattern]
+#puts "files: #{files.inspect}"
+z = Zlib::Deflate.new #(Zlib::BEST_COMPRESSION)
+result = Ml::Cluster.score(files, :compressor => z)
+z.close # this was key to stopping the deflate error
+ap result
