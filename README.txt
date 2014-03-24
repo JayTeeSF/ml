@@ -1,6 +1,10 @@
 Thanks to:
 http://www.igvita.com/2011/04/20/intuition-data-driven-machine-learning/
 
+# Stop words from:
+https://code.google.com/p/stop-words
+
+
 ### cluster some strings:
 ↪ ./bin/cluster -s "string 1" -s "string 2" -s "very different string 3"
 clustering...
@@ -28,30 +32,57 @@ clustering...
     }
 ]
 
-### cluster some urls: (it actually clusters the text of the webpages)
-↪ ./bin/cluster -u "http://www.zoodles.com" -u "http://www.google.com" -u "https://www.yahoo.com/"
+### try a different compressor:
+↪ ./bin/cluster -c Ml::TokenCompressor -s "string 1" -s "unique string 2" -s "unique different string"
 clustering...
 [
     [0] {
         :data_sets => [
-            [0] "http://www.google.com",
-            [1] "https://www.yahoo.com/"
+            [0] "unique string 2",
+            [1] "unique different string"
         ],
-            :score => 442
+            :score => 2
     },
     [1] {
+        :data_sets => [
+            [0] "string 1",
+            [1] "unique different string"
+        ],
+            :score => 1
+    },
+    [2] {
+        :data_sets => [
+            [0] "string 1",
+            [1] "unique string 2"
+        ],
+            :score => 1
+    }
+]
+
+### cluster some urls: (it actually clusters the text of the webpages)
+↪ ./bin/cluster -c Ml::TokenCompressor  -u "http://www.zoodles.com" -u "http://www.google.com" -u "https://www.yahoo.com/"
+clustering...
+[
+    [0] {
         :data_sets => [
             [0] "http://www.zoodles.com",
             [1] "https://www.yahoo.com/"
         ],
-            :score => 423
+            :score => 60
+    },
+    [1] {
+        :data_sets => [
+            [0] "http://www.google.com",
+            [1] "https://www.yahoo.com/"
+        ],
+            :score => 20
     },
     [2] {
         :data_sets => [
             [0] "http://www.zoodles.com",
             [1] "http://www.google.com"
         ],
-            :score => 213
+            :score => 10
     }
 ]
 

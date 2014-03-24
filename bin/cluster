@@ -38,7 +38,7 @@ opt_parser = OptionParser.new do |opts|
   end
 
   opts.on( "-c [COMPRESSOR]", "--compressor [COMPRESSOR]", "run with specified compressor") do |c|
-    options[:compressor] = c
+    options[:compressor] = Object.const_get(c).new
   end
 
   opts.on( "-a [COMPRESSOR_ARG]", "--arg [COMPRESSOR_ARG]", "run compressor with specified arg") do |a|
