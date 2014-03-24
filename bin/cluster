@@ -1,14 +1,86 @@
 #!/usr/bin/env ruby
 
 require 'zlib'
+require 'open-uri'
+require 'optparse'
 require_relative "../lib/ml"
 
 Ml::Util.load_gem 'awesome_print', 'ap'
 
-pattern = "#{File.dirname(__FILE__)}/../fixtures/*"
-files = Dir[pattern]
-#puts "files: #{files.inspect}"
-z = Zlib::Deflate.new #(Zlib::BEST_COMPRESSION)
-result = Ml::Cluster.score(files, :compressor => z)
-z.close # this was key to stopping the deflate error
+# file, url, stringIO, etc...
+def default_readable_data_sets
+  Dir["#{File.dirname(__FILE__)}/../fixtures/*"].reduce([]){|memo, f_path|
+    memo << { :name => File.basename(f_path), :readable => open(f_path) }
+    memo
+  }
+end
+
+options = {}
+opt_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{$0} [OPTIONS]..."
+
+  opts.on( "-s [STRING]", "--string [STRING]", "run against string") do |s|
+    unless options[:strings]
+      options[:strings] = []
+    end
+    options[:strings] << {:name => s[0..255], :readable => StringIO.new(s)}
+  end
+
+  opts.on( "-u [URL]", "--url [URL]", "run against url") do |u|
+    unless options[:urls]
+      options[:urls] = []
+    end
+    options[:urls] << {:name => u[0..255], :readable => open(u) }
+  end
+
+  opts.on( "-t", "--test", "run against test files") do |t|
+    options[:readable_data_sets] = default_readable_data_sets
+  end
+
+  opts.on( "-c [COMPRESSOR]", "--compressor [COMPRESSOR]", "run with specified compressor") do |c|
+    options[:compressor] = c
+  end
+
+  opts.on( "-a [COMPRESSOR_ARG]", "--arg [COMPRESSOR_ARG]", "run compressor with specified arg") do |a|
+    unless options[:compressor_args]
+      options[:compressor_args] = []
+    end
+    options[:compressor_args] << a
+  end
+
+  opts.on_tail( '-h', '--help', 'This help screen' ) do
+    puts opts
+    exit
+  end
+end
+opt_parser.parse!
+
+if strings = options.delete(:strings)
+  options[:readable_data_sets] = strings
+end
+
+if urls = options.delete(:urls)
+  options[:readable_data_sets] = urls
+end
+
+unless options.key?(:readable_data_sets)
+  options[:readable_data_sets] = default_readable_data_sets
+end
+
+if options.key?(:compressor_args)
+  options[:compressor_args] = options[:compressor_args].join(' ')
+end
+
+unless options.key?(:compressor)
+  options[:compressor] = Zlib::Deflate.new #(Zlib::BEST_COMPRESSION)
+  unless options.key?(:compressor_args)
+    options[:compressor_args] = Zlib::FULL_FLUSH
+  end
+end
+
+puts "clustering..."
+
+result = Ml::Cluster.score(options)
+options[:compressor].close # this was key to stopping the deflate error
 ap result
+options[:readable_data_sets].map{|h| h[:readable].close }
